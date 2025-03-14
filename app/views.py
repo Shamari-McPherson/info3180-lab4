@@ -65,6 +65,30 @@ def upload():
 
     return render_template('upload.html', form=form)
 
+def get_uploaded_images():
+    # Helper function to iterate over the contents of the uploads folder and return filenames
+    upload_folder = app.config['UPLOAD_FOLDER']
+    filenames = []
+    for subdir, dirs, files in os.walk(upload_folder):
+        for file in files:
+            file_path = os.path.join(subdir, file)
+            relative_path = os.path.relpath(file_path, upload_folder)
+            filenames.append(relative_path)
+    return filenames
+
+@app.route('/uploads/<filename>')
+@login_required
+def get_image(filename):
+    # View function to return a specific image from the upload folder
+    return send_from_directory(os.path.join(os.getcwd(), app.config['UPLOAD_FOLDER']), filename)
+
+
+@app.route('/files')
+@login_required
+def files():
+    # Use the helper function to get uploaded image files
+    files = get_uploaded_images()
+    return render_template('files.html', files=files)
 
 
 @login_manager.user_loader
