@@ -1,10 +1,11 @@
 import os
 from app import app, db, login_manager
-from flask import render_template, request, redirect, url_for, flash, session, abort
+from flask import render_template, request, redirect, url_for, flash, session, abort, send_from_directory
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
+from werkzeug.security import check_password_hash
 from app.models import UserProfile
-from app.forms import LoginForm
+from app.forms import LoginForm, UploadForm
 
 
 ###
@@ -20,7 +21,7 @@ def home():
 @app.route('/about/')
 def about():
     """Render the website's about page."""
-    return render_template('about.html', name="Mary Jane")
+    return render_template('about.html', name="Shamari McPherson")
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
@@ -59,10 +60,12 @@ def upload():
         if file:
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        flash('File Saved', 'success')
-        
-        return redirect(url_for('home')) # Update this to redirect the user to a route that displays all uploaded image files
-
+            flash('File Saved', 'success')
+            print(f"Saving file to: {save_path}")
+            file.save(save_path)
+        else:
+            flash('No file selected', 'danger')
+        return redirect(url_for('files'))
     return render_template('upload.html', form=form)
 
 def get_uploaded_images():
@@ -71,6 +74,9 @@ def get_uploaded_images():
     filenames = []
     for subdir, dirs, files in os.walk(upload_folder):
         for file in files:
+            # Ignore .DS_Store files
+            if file == '.DS_Store':
+                continue
             file_path = os.path.join(subdir, file)
             relative_path = os.path.relpath(file_path, upload_folder)
             filenames.append(relative_path)
